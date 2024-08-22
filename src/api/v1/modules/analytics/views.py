@@ -8,6 +8,7 @@ from .models import CampaignDataModel
 from .serializers import CampaignDataSerializer
 from django.db.models import Count, Sum
 from django.core.exceptions import ObjectDoesNotExist
+from datetime import datetime
 
 
 class CSVUploadView(APIView):
@@ -145,3 +146,62 @@ class CategoryTypePerformanceView(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class FilteredAggregationView(APIView):
+    def get(self, request):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        category = request.query_params.get("category")
+
+        if not start_date or not end_date:
+            return Response(
+                {"error": "Start date and end date are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError:
+            return Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        valid_categories = CampaignDataModel.objects.values_list(
+            "category", flat=True
+        ).distinct()
+
+        if not category:
+            return Response(
+                {
+                    "error": "Category is required.",
+                    "valid_categories": valid_categories,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        category = category.upper()
+
+        if category not in valid_categories:
+            return Response(
+                {
+                    "error": f"Invalid category '{category}'.",
+                    "valid_categories": valid_categories,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        filtered_data = CampaignDataModel.objects.filter(
+            date__range=[start_date, end_date], category=category
+        )
+
+        aggregated_data = filtered_data.aggregate(
+            total_revenue=Sum("revenue"),
+            total_conversions=Sum("conversions"),
+            total_impressions=Sum("impressions"),
+            total_clicks=Sum("clicks"),
+        )
+
+        return Response(aggregated_data, status=status.HTTP_200_OK)

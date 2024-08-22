@@ -4,6 +4,7 @@ from .views import (
     ConversionRateView,
     StatusDistributionView,
     CategoryTypePerformanceView,
+    FilteredAggregationView
 )
 
 urlpatterns = [
@@ -18,5 +19,10 @@ urlpatterns = [
         "category-type-performance/",
         CategoryTypePerformanceView.as_view(),
         name="category-type-performance",
+    ),
+    path(
+        "filtered-aggregation/",
+        FilteredAggregationView.as_view(),
+        name="filtered-aggregation",
     ),
 ]
