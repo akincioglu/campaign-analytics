@@ -30,7 +30,7 @@ Campaign Analytics is a Django application designed to manage and analyze campai
 1. Clone this repository:
 
 ```bash
-  git clone https://github.com/yourusername/campaign-analytics.git
+  git clone https://github.com/akincioglu/campaign-analytics.git
   cd campaign-analytics
 ```
 
