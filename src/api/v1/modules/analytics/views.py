@@ -49,3 +49,38 @@ class CSVUploadView(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class ConversionRateView(APIView):
+    def get(self, request):
+        data = CampaignDataModel.objects.all()
+
+        conversion_rates = [
+            {
+                "customer_id": item.customer_id,
+                "conversion_rate": (
+                    (item.conversions / item.impressions) * 100
+                    if item.impressions > 0
+                    else 0
+                ),
+            }
+            for item in data
+        ]
+
+        if not conversion_rates:
+            return Response({"error": "No data available"}, status=404)
+
+        highest_conversion_rate = max(
+            conversion_rates, key=lambda x: x["conversion_rate"]
+        )
+        lowest_conversion_rate = min(
+            conversion_rates, key=lambda x: x["conversion_rate"]
+        )
+
+        return Response(
+            {
+                "conversion_rates": conversion_rates,
+                "highest_conversion_rate": highest_conversion_rate,
+                "lowest_conversion_rate": lowest_conversion_rate,
+            }
+        )
