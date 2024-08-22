@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from .models import CampaignDataModel
 from .serializers import CampaignDataSerializer
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -111,6 +111,35 @@ class StatusDistributionView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class CategoryTypePerformanceView(APIView):
+    def get(self, request):
+        try:
+            performance_data = (
+                CampaignDataModel.objects.values("category", "type")
+                .annotate(
+                    total_revenue=Sum("revenue"),
+                    total_conversions=Sum("conversions"),
+                    total_impressions=Sum("impressions"),
+                    total_clicks=Sum("clicks"),
+                    count=Count("id"),
+                )
+                .order_by("category", "type")
+            )
+
+            if not performance_data:
+                return Response(
+                    {"error": "No data found for category-type performance."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            return Response(performance_data, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response(
