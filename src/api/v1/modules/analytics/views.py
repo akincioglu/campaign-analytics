@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from .models import CampaignDataModel
 from .serializers import CampaignDataSerializer
+from django.db.models import Count
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class CSVUploadView(APIView):
@@ -82,5 +84,35 @@ class ConversionRateView(APIView):
                 "conversion_rates": conversion_rates,
                 "highest_conversion_rate": highest_conversion_rate,
                 "lowest_conversion_rate": lowest_conversion_rate,
-            }
+            },
+            status=status.HTTP_200_OK,
         )
+
+
+class StatusDistributionView(APIView):
+    def get(self, request):
+        try:
+            status_distribution = CampaignDataModel.objects.values("status").annotate(
+                count=Count("status")
+            )
+
+            if not status_distribution:
+                return Response(
+                    {"error": "No data found for status distribution."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            return Response(status_distribution)
+
+        except ObjectDoesNotExist:
+            return Response(
+                {
+                    "error": "Database query failed. Check if the table exists and is populated."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
