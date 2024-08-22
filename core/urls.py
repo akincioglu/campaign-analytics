@@ -14,9 +14,14 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+    # Modüler yapı kurduğum için analytics modülünün içerisinde bulunan url'leri burada kapsayacak şekilde tanımlamak isterdim
+    # ancak case'de verilen endpointlere bağlı kaldığım için yalnızca /api endpointi üzerinden modül içerisinde bulunan url'lere yönlendirme yaptım.
+    # path("api/analytics", include("src.api.v1.modules.analytics.urls")),
+    path("api/", include("src.api.v1.modules.analytics.urls")),
 ]
